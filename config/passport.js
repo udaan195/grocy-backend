@@ -1,5 +1,8 @@
+// backend/config/passport.js
+
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../api/models/userModel');
+const bcrypt = require('bcryptjs'); // पासवर्ड के लिए यह ज़रूरी है
 
 module.exports = function(passport) {
     passport.use(
@@ -7,7 +10,7 @@ module.exports = function(passport) {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                callbackURL: '/api/users/auth/google/callback',
+                callbackURL: '/api/users/auth/google/callback', // यह पूरा URL होना चाहिए, जैसे https://your-backend.com/api/users/auth/google/callback
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
@@ -19,12 +22,15 @@ module.exports = function(passport) {
                         return done(null, user);
                     } else {
                         // अगर यूजर नहीं है, तो नया यूजर बनाएँ
+                        const salt = await bcrypt.genSalt(10);
+                        const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), salt); // एक रैंडम पासवर्ड को हैश करें
+
                         const newUser = new User({
                             name: profile.displayName,
                             email: profile.emails[0].value,
-                            password: Math.random().toString(36).slice(-8), // एक रैंडम पासवर्ड
+                            password: hashedPassword, // हैश किया हुआ पासवर्ड सेव करें
                         });
-                        await newUser.save({ validateBeforeSave: false }); // पासवर्ड हैशिंग को बायपास करें
+                        await newUser.save();
                         return done(null, newUser);
                     }
                 } catch (err) {
@@ -34,17 +40,6 @@ module.exports = function(passport) {
             }
         )
     );
-
-    passport.serializeUser((user, done) => {
-        done(null, user.id);
-    });
-
-    passport.deserializeUser(async (id, done) => {
-        try {
-            const user = await User.findById(id);
-            done(null, user);
-        } catch (err) {
-            done(err, null);
-        }
-    });
 };
+
+// serializeUser और deserializeUser को यहाँ से पूरी तरह हटा दिया गया है।

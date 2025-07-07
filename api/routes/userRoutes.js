@@ -4,9 +4,17 @@ const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect } = require('../../middleware/authMiddleware'); // सुनिश्चित करें कि middleware का पाथ सही है
 
-// POST /api/users/register
+// Helper function to generate JWT token
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+};
+
+// @desc    Register a new user
+// @route   POST /api/users/register
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -17,34 +25,43 @@ router.post('/register', async (req, res) => {
         if (userExists) {
             return res.status(400).json({ message: 'User with this email already exists' });
         }
-        const user = new User({ name, email, password });
+
+        // --- FIX: Password को हैश करें ---
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const user = new User({ name, email, password: hashedPassword });
         const createdUser = await user.save();
+        
+        // --- FIX: Register के बाद तुरंत टोकन भेजें ---
         res.status(201).json({
             _id: createdUser._id,
             name: createdUser.name,
             email: createdUser.email,
-            role: createdUser.role, // role भेजा जा रहा है
+            role: createdUser.role,
+            token: generateToken(createdUser._id), // यूज़र को लॉग-इन रखने के लिए टोकन
         });
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// POST /api/users/login
+// @desc    Authenticate user & get token
+// @route   POST /api/users/login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role, // **यह लाइन सबसे ज़रूरी है**
-                token: token,
-                // address, city, etc., भी भेज सकते हैं
+                role: user.role,
+                token: generateToken(user._id),
                 address: user.address,
                 city: user.city,
                 pincode: user.pincode,
@@ -59,8 +76,9 @@ router.post('/login', async (req, res) => {
     }
 });
 
-
-// PUT /api/users/profile
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
 router.put('/profile', protect, async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -73,14 +91,13 @@ router.put('/profile', protect, async (req, res) => {
             user.state = req.body.state || user.state;
             
             const updatedUser = await user.save();
-            const token = jwt.sign({ id: updatedUser._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-
+            
             res.json({
                 _id: updatedUser._id,
                 name: updatedUser.name,
                 email: updatedUser.email,
                 role: updatedUser.role,
-                token: token,
+                token: generateToken(updatedUser._id), // अपडेट के बाद नया टोकन
                 address: updatedUser.address,
                 city: updatedUser.city,
                 pincode: updatedUser.pincode,
@@ -95,35 +112,29 @@ router.put('/profile', protect, async (req, res) => {
     }
 });
 
-// GET /api/users/profile
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
 router.get('/profile', protect, (req, res) => {
+    // protect middleware req.user में जानकारी डाल देगा
     if (req.user) {
-        res.json({
-            _id: req.user._id,
-            name: req.user.name,
-            email: req.user.email,
-            role: req.user.role,
-            address: req.user.address,
-            city: req.user.city,
-            pincode: req.user.pincode,
-            state: req.user.state,
-            phone: req.user.phone,
-        });
+        res.json(req.user);
     } else {
         res.status(404).json({ message: 'User not found' });
     }
 });
 
 
-// Google Auth Routes
+// --- Google Auth Routes ---
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
 router.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: 'https://grocyapp.netlify.app/login.html' }),
+    // --- FIX: session: false यहाँ जोड़ें ---
+    passport.authenticate('google', { failureRedirect: 'https://grocyapp.netlify.app/login.html', session: false }),
     (req, res) => {
-        const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+        const token = generateToken(req.user._id);
         res.redirect(`https://grocyapp.netlify.app/auth-callback.html?token=${token}`);
     }
 );
-
 
 module.exports = router;
