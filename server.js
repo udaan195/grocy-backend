@@ -1,36 +1,3 @@
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const session = require('express-session');
-const passport = require('passport');
-require('dotenv').config();
-
-// Passport Config
-require('./config/passport')(passport);
-
-// Connect to Database
-connectDB();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middlewares
-app.use(express.json());
-
-// CORS Configuration to allow requests from your Netlify app
-app.use(cors({
-    origin: 'https://grocyapp.netlify.app' 
-}));
-
-// Express session middleware
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-    })
-);
-
 // Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
