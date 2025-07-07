@@ -112,14 +112,10 @@ router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 
 router.get(
     '/auth/google/callback',
     passport.authenticate('google', { 
-        failureRedirect: '[https://grocyapp.netlify.app/login.html](https://grocyapp.netlify.app/login.html)' // **लाइव Frontend URL**
+        failureRedirect: 'https://grocyapp.netlify.app/login.html' // ✅ Already correct
     }),
     (req, res) => {
         const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-        // **लाइव Frontend URL**
-        res.redirect(`https://grocyapp.netlify.app/auth-callback.html?token=${token}`);
+        res.redirect(`https://grocyapp.netlify.app/auth-callback.html?token=${token}`); // ✅ FIXED
     }
 );
-
-module.exports = router;
-
