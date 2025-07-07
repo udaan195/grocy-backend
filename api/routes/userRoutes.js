@@ -118,10 +118,10 @@ router.get('/profile', protect, (req, res) => {
 // Google Auth Routes
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: 'http://localhost:8080/login.html' }),
+    passport.authenticate('google', { failureRedirect: 'https://grocyapp.netlify.app/login.html' }),
     (req, res) => {
         const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-        res.redirect(`http://localhost:8080/auth-callback.html?token=${token}`);
+        res.redirect(`https://grocyapp.netlify.app/auth-callback.html?token=${token}`);
     }
 );
 
