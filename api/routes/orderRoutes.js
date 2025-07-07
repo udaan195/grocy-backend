@@ -119,3 +119,4 @@ router.get(
         res.redirect('https://grocyapp.netlify.app/auth-callback.html?token=${token}')
     }
 );
+module.exports = router;
