@@ -116,6 +116,6 @@ router.get(
     }),
     (req, res) => {
         const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-        res.redirect(`https://grocyapp.netlify.app/auth-callback.html?token=${token}`); // ✅ FIXED
+        res.redirect('https://grocyapp.netlify.app/auth-callback.html?token=${token}')
     }
 );
