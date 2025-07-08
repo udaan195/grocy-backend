@@ -125,4 +125,25 @@ router.delete('/:id', protect, async (req, res) => {
     }
 });
 
+// backend/api/routes/productRoutes.js में जोड़ें
+
+// @desc    Fetch products by a list of IDs
+// @route   POST /api/products/byIds
+// @access  Public
+router.post('/byIds', async (req, res) => {
+    const { ids } = req.body; // frontend से IDs की लिस्ट आएगी
+
+    if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({ message: 'Please provide an array of product IDs' });
+    }
+    try {
+        const products = await Product.find({ '_id': { $in: ids } });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// module.exports = router; // यह लाइन सबसे नीचे रहेगी
+
 module.exports = router;
