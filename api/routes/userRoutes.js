@@ -15,6 +15,8 @@ const generateToken = (id) => {
 
 // @desc    Register a new user
 // @route   POST /api/users/register
+// backend/api/routes/userRoutes.js में
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -25,22 +27,33 @@ router.post('/register', async (req, res) => {
         if (userExists) {
             return res.status(400).json({ message: 'User with this email already exists' });
         }
-        
-        const user = new User({ name, email, password });
-        const createdUser = await user.save(); // पासवर्ड अपने आप हैश हो जाएगा
 
-        // FIX: रजिस्टर करने के तुरंत बाद टोकन भेजें
+        // --- FIX: यहाँ से हैशिंग का कोड हटा दिया गया है ---
+        // अब मॉडल खुद प्लेन पासवर्ड लेकर उसे हैश कर लेगा
+        const user = new User({ name, email, password });
+        const createdUser = await user.save(); // .save() पर pre-save hook चलेगा
+
+        // Helper function to generate JWT
+        const generateToken = (id) => {
+            return jwt.sign({ id }, process.env.JWT_SECRET, {
+                expiresIn: '30d',
+            });
+        };
+        
         res.status(201).json({
             _id: createdUser._id,
             name: createdUser.name,
             email: createdUser.email,
             role: createdUser.role,
-            token: generateToken(createdUser._id), // यूज़र को लॉग-इन रखने के लिए टोकन
+            token: generateToken(createdUser._id),
         });
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
 
 // @desc    Authenticate user & get token
 // @route   POST /api/users/login
