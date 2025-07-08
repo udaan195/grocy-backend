@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(express.json());
-app.use(cors({ origin: 'https://grocyapp.netlify.app' })); // आपके frontend का URL
-app.use(passport.initialize()); // सिर्फ passport.initialize() रहेगा
+app.use(cors({ origin: 'https://grocyapp.netlify.app' }));
+app.use(passport.initialize()); // सिर्फ initialize() रहेगा, session() हटा दिया गया है
 
 // Root Route
 app.get('/', (req, res) => res.send('Grocery App Backend is Running!'));
