@@ -144,6 +144,4 @@ router.post('/byIds', async (req, res) => {
     }
 });
 
-// module.exports = router; // यह लाइन सबसे नीचे रहेगी
-
 module.exports = router;
