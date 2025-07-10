@@ -22,10 +22,20 @@ app.use(passport.initialize()); // सिर्फ initialize() रहेगा,
 app.get('/', (req, res) => res.send('Grocery App Backend is Running!'));
 
 // API Routes
+// backend/server.js
+
+// ... बाकी का कोड ...
+
+// API Routes
 app.use('/api/products', require('./api/routes/productRoutes'));
-app.use('/api/orders', require('./api/routes/orderRoutes'));
 app.use('/api/users', require('./api/routes/userRoutes'));
 app.use('/api/payment', require('./api/routes/paymentRoutes'));
 app.use('/api/dashboard', require('./api/routes/dashboardRoutes'));
+
+// --- सुनिश्चित करें कि यह लाइन मौजूद है ---
+app.use('/api/orders', require('./api/routes/orderRoutes'));
+
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
