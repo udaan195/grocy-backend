@@ -1,12 +1,8 @@
-// backend/middleware/authMiddleware.js
-
 const jwt = require('jsonwebtoken');
 const User = require('../api/models/userModel');
 
-// यह फंक्शन चेक करता है कि यूज़र लॉग-इन है या नहीं
 const protect = async (req, res, next) => {
     let token;
-
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
@@ -17,26 +13,21 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
-
     if (!token) {
         return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
-// --- FIX: यह 'role' को चेक करेगा ---
-// यह फंक्शन चेक करता है कि क्या यूज़र एडमिन है
 const admin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && req.user.role === 'admin') { // 'isAdmin' की जगह 'role'
         next();
     } else {
         res.status(403).json({ message: 'Not authorized as an admin' });
     }
 };
 
-// यह फंक्शन चेक करता है कि क्या यूज़र वेंडर है
 const vendor = (req, res, next) => {
     if (req.user && (req.user.role === 'vendor' || req.user.role === 'admin')) {
-        // एडमिन को भी वेंडर वाले काम करने की अनुमति दें
         next();
     } else {
         res.status(403).json({ message: 'Not authorized as a vendor' });
